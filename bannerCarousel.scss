@@ -1,0 +1,163 @@
+// -----------------------------------------------------------------------------
+//	Banner Carousel
+// -----------------------------------------------------------------------------
+//	Usage:
+//		carousel image naming convention: carousel-image-1', 'carousel-image-2', 'carousel-image-3', etc.
+// 		@include bannerCarousel('className', 250px, 600px, 3vw, 200px, 300px, 1.5, 'image-name.jpg', true, 3, 50% 50%, cover, no-repeat, false);
+
+// Banner Carousel Variables
+// -----------------------------------------------------------------------------
+$carousel-fade: true; // true: Fade or false: slide
+$animation-speed: 1s; // speed between slides
+$animation-duration: 5s; // duration of slide on screen
+
+@mixin bannerCarousel($class, $imgH, $imgW, $h:null, $min:null, $max:null, $m-x:1.5, $imgName, $suffix:false, $count, $pos:50% 50%, $size:cover, $repeat:no-repeat, $webp:false) {
+	@if $h !=null and type-of($h) !=number and not str-index($h, 'vh') and not str-index($h, "%") and $h !='auto' {
+		@error "The value of $h:#{$h} must be in pixels, vh, or %."; }
+	@if $min !=null and type-of($min) !=number and not str-index($min, 'vh') and not str-index($min, "%") {
+		@error "The value of $min:#{$min} must be in pixels, vh, or %."; }
+	@if $max !=null and type-of($max) !=number and not str-index($max, 'vh') and not str-index($max, "%") {
+		@error "The value of $max:#{$max} must be in pixels, vh, or %."; }
+	@if type-of($imgH) !=number {
+		@error "The image height value of $imgH:#{$imgH} must be in pixels."; }
+	@if type-of($imgW) !=number {
+		@error "The image width value of $imgW:#{$imgW} must be in pixels."; }
+	@if $count == null or type-of($count) !=number or $count == 0 {
+		@error "The value of $count:#{$count} must be greater than 0"; }
+
+	// Slideshow images for banner
+	@if $count > 1 {
+		// Animation options
+		$fade: $carousel-fade; // fade or slide
+		$n: $count; // For "n" images
+		$n1: $count + 1;
+		$maxCount: $n1;
+		$s: $animation-speed; // s (speed)  = animation time between slides
+		$d: $animation-duration; // d (duration) = duration for slide in view
+		$t: ($s + $d) * $n; // t (time) = total time of all slides and animations
+		$time: math.div($s, $t) * 100%; // time = time of animation (% of total time)
+		$pause: math.div($d, $t) * 100%; // pause = time of paused animation (% of total time)
+
+		// Slide images and positions
+		$index: str-index($imgName, '.');
+		$imgs: null;
+		$imgList: ();
+		$positionList: (0);
+		$output: null;
+
+		@for $i from 1 through $count {
+			@if $suffix {
+				$output: $root-url + str-insert($imgName, "-#{$i}#{$img-suffix}", $index);
+			} @else {
+				$output: $root-url + str-insert($imgName, "-#{$i}", $index);
+			}
+
+			@if $imgs {
+				$imgs: $imgs + ',url(' + $output + ')';
+			} @else {
+				$imgs: 'url(' + $output + ')';
+			}
+
+			$imgList: append($imgList, unquote('url(' + $output + ')'), comma);
+			$positionList: append($positionList, unquote(($i * 100) + 'vw'));
+		}
+
+		&.#{$class} {
+			overflow: hidden;
+      		width: 100%;
+  			position: relative;
+
+			&:before {
+				display: block;
+				content: '';
+				padding-bottom: math.div($imgH,$imgW) * 100%;
+			}
+
+			.slides {
+				@if $fade {
+					width: 100%;
+				} @else {
+					//- Infinite scroll image/position
+					$clone: null;
+					@if $suffix {
+						$clone: $root-url + str-insert($imgName, "-1#{$img-suffix}", $index)
+					} @else {
+						$clone: $root-url + str-insert($imgName, "-1", $index)
+					}
+					$clone: unquote('url(' + $clone + ')');
+					$imgList: append($imgList, unquote($clone));
+					$positionList: append($positionList, unquote('#{(($count + 1) * 100)}vw'));
+					//- End Infinite scroll image/position
+
+					width: ($count + 1) * 100vw;
+				}
+
+				animation: carouselSlide $t infinite;
+				@if $animation-duration == 0s {
+					animation-timing-function: linear;
+				}
+				position: absolute;
+				height: 100%;
+				top: 0;
+				left: 0;
+				margin: 0;
+				padding: 0;
+				list-style: none;
+				padding-left: 0;
+				overflow: hidden;
+				background-image: join($imgList, (), comma);
+				background-position: join($positionList, (), comma);
+				background-color: #000;
+				background-size: 100vw;
+				background-repeat: no-repeat;
+			}
+			@if $mobile {
+				height: clamp(#{$min}, #{$h}, #{$max});
+				@media screen and (orientation:landscape) {
+					height: $h * $m-x;
+				}
+			} @else {
+				height: clamp(#{$min}, #{$h}, #{$max});
+				@media all and (-ms-high-contrast: none),
+				(-ms-high-contrast: active) {
+					height: $h;
+					min-height: $min;
+					max-height: $max;
+				}
+			} //End
+		}
+
+		/* Sliding Carousel Animation */
+		@keyframes carouselSlide {
+			@for $i from 1 through length($imgList) {
+				$img: nth($imgList, $i);
+
+				@if $i == 1 {
+					0%, #{$pause} {
+						@if $fade {
+							background-image: $img;
+						} @else {
+							transform: translateX(0);
+						}
+					}
+				} @else if $i < $maxCount {
+					#{($pause + $time) * ($i - 1)}, #{(($pause + $time) * ($i - 1)) + $pause} {
+						@if $fade {
+							background-image: $img;
+						} @else {
+							transform: translateX((($i - 1) * -100vw));
+						}
+					}
+				} @else {
+					#{($pause + $time) * ($i - 1)}, 100% {
+						@if $fade {
+							background-image: $img;
+						} @else {
+							transform: translateX((($i - 1) * -100vw));
+						}
+					}
+				}
+			}
+		}
+	}
+}
