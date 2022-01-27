@@ -7,6 +7,7 @@
 
 // Banner Carousel Variables
 // -----------------------------------------------------------------------------
+$mobile: false; // a variable to determine how to compile the code for desktop or mobile sites
 $carousel-fade: true; // true: Fade or false: slide
 $animation-speed: 1s; // speed between slides
 $animation-duration: 5s; // duration of slide on screen
