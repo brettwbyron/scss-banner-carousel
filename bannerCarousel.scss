@@ -25,6 +25,9 @@ $animation-duration: 5s; // duration of slide on screen
 		@error "The image width value of $imgW:#{$imgW} must be in pixels."; }
 	@if $count == null or type-of($count) !=number or $count == 0 {
 		@error "The value of $count:#{$count} must be greater than 0"; }
+	
+	width: 100%;
+        position: relative;
 
 	// Slideshow images for banner
 	@if $count > 1 {
